@@ -136,8 +136,60 @@ async function markAsPosted(postIds) {
   saveLocalFile(array);
 }
 
+const LAST_RUN_KEY = 'last_run_status';
+const LOCAL_LAST_RUN_FILE = path.join(LOCAL_DATA_DIR, 'last_run.json');
+
+/**
+ * Guarda el resumen de la última ejecución
+ */
+async function recordRunStatus(data) {
+  const payload = {
+    ...data,
+    updatedAt: new Date().toISOString()
+  };
+
+  const store = getNetlifyStore();
+  if (store && config.isNetlify) {
+    try {
+      await store.setJSON(LAST_RUN_KEY, payload);
+    } catch (err) {
+      console.warn('Error al guardar status en Blobs:', err.message);
+    }
+  }
+
+  try {
+    if (!fs.existsSync(LOCAL_DATA_DIR)) {
+      fs.mkdirSync(LOCAL_DATA_DIR, { recursive: true });
+    }
+    fs.writeFileSync(LOCAL_LAST_RUN_FILE, JSON.stringify(payload, null, 2), 'utf8');
+  } catch (_) {}
+}
+
+/**
+ * Obtiene el resumen de la última ejecución
+ */
+async function getLastRunStatus() {
+  const store = getNetlifyStore();
+  if (store && config.isNetlify) {
+    try {
+      const data = await store.get(LAST_RUN_KEY, { type: 'json' });
+      if (data) return data;
+    } catch (_) {}
+  }
+
+  try {
+    if (fs.existsSync(LOCAL_LAST_RUN_FILE)) {
+      return JSON.parse(fs.readFileSync(LOCAL_LAST_RUN_FILE, 'utf8'));
+    }
+  } catch (_) {}
+
+  return null;
+}
+
 module.exports = {
   getPostedIds,
   hasBeenPosted,
-  markAsPosted
+  markAsPosted,
+  recordRunStatus,
+  getLastRunStatus
 };

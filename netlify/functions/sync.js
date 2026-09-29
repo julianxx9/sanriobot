@@ -4,7 +4,7 @@
  */
 const config = require('../../src/config');
 const { runSync } = require('../../src/syncService');
-const { getPostedIds } = require('../../src/storage');
+const { getPostedIds, getLastRunStatus } = require('../../src/storage');
 const telegram = require('../../src/telegram');
 
 exports.handler = async (event, context) => {
@@ -27,6 +27,7 @@ exports.handler = async (event, context) => {
     if (params.action === 'status') {
       const validation = config.validate();
       const postedIds = await getPostedIds();
+      const lastRun = await getLastRunStatus();
       let botInfo = null;
 
       if (config.telegramBotToken) {
@@ -52,10 +53,41 @@ exports.handler = async (event, context) => {
           },
           bot: botInfo,
           stats: {
-            totalPostedRecorded: postedIds.size
+            totalPostedRecorded: postedIds.size,
+            lastRun: lastRun || null
           }
         }, null, 2)
       };
+    }
+
+    // Probar envío directo de mensaje al canal
+    if (params.action === 'test_message') {
+      try {
+        const testRes = await telegram.sendMessage(
+          config.telegramChannelId,
+          '🌸 <b>¡Hola! Conexión exitosa.</b>\nEl bot de Sanrio está conectado y listo para publicar.'
+        );
+        return {
+          statusCode: 200,
+          headers,
+          body: JSON.stringify({
+            status: 'ok',
+            message: 'Mensaje de prueba enviado con éxito al canal.',
+            channelId: config.telegramChannelId,
+            telegramResponse: testRes
+          }, null, 2)
+        };
+      } catch (tgErr) {
+        return {
+          statusCode: 400,
+          headers,
+          body: JSON.stringify({
+            status: 'error',
+            message: `Fallo al enviar mensaje al canal: ${tgErr.message}`,
+            channelId: config.telegramChannelId
+          }, null, 2)
+        };
+      }
     }
 
     // Si se desea configurar el webhook de Telegram directamente

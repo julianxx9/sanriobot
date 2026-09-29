@@ -12,7 +12,7 @@ const config = require('./config');
 function normalizePost(raw) {
   let shortcode = raw.shortcode || raw.shortCode || raw.code || '';
   if (!shortcode && raw.url && typeof raw.url === 'string') {
-    const match = raw.url.match(/\/p\/([A-Za-z0-9_-]+)/);
+    const match = raw.url.match(/\/(?:p|reel|tv)\/([A-Za-z0-9_-]+)/);
     if (match) shortcode = match[1];
   }
 
@@ -47,11 +47,10 @@ async function scrapeViaApify(username, limit = 12) {
 
   // Usamos el actor oficial y popular 'apify/instagram-scraper'
   const actorId = 'apify~instagram-scraper';
-  const apifyUrl = `https://api.apify.com/v2/acts/${actorId}/run-sync-get-dataset-items?token=${config.apifyApiToken}&timeout=90`;
+  const apifyUrl = `https://api.apify.com/v2/acts/${actorId}/run-sync-get-dataset-items?token=${config.apifyApiToken}&timeout=120`;
 
   const inputData = {
     directUrls: [`https://www.instagram.com/${username}/`],
-    usernames: [username],
     resultsLimit: Math.max(limit, 10),
     resultsType: 'posts'
   };
@@ -66,7 +65,7 @@ async function scrapeViaApify(username, limit = 12) {
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Apify respondió con estado ${response.status}: ${errorText.substring(0, 200)}`);
+    throw new Error(`Apify respondió con estado ${response.status}: ${errorText.substring(0, 300)}`);
   }
 
   const items = await response.json();
@@ -77,7 +76,7 @@ async function scrapeViaApify(username, limit = 12) {
 
   // Filtrar solo los elementos que son publicaciones reales
   const validPosts = items
-    .filter(item => item && (item.shortCode || item.code || (typeof item.url === 'string' && item.url.includes('/p/')) || item.displayUrl || item.type === 'Image' || item.type === 'Video' || item.type === 'Sidecar'))
+    .filter(item => item && (item.shortCode || item.code || (typeof item.url === 'string' && (item.url.includes('/p/') || item.url.includes('/reel/') || item.url.includes('/tv/'))) || item.displayUrl || item.type === 'Image' || item.type === 'Video' || item.type === 'Sidecar'))
     .map(normalizePost);
 
   return validPosts;
