@@ -6,6 +6,8 @@ const config = require('../../src/config');
 const { runSync } = require('../../src/syncService');
 const { getPostedIds, getLastRunStatus } = require('../../src/storage');
 const telegram = require('../../src/telegram');
+const scraper = require('../../src/scraper');
+const { translateToSpanish } = require('../../src/translator');
 
 exports.handler = async (event, context) => {
   // Configuración de cabeceras CORS
@@ -133,6 +135,54 @@ exports.handler = async (event, context) => {
           body: JSON.stringify({
             status: 'error',
             message: `Fallo al conectar con Apify: ${err.message}`
+          }, null, 2)
+        };
+      }
+    }
+
+    // Publicar 1 post real traducido al canal para verificar publicación multimedia
+    if (params.action === 'publish_test_post') {
+      try {
+        const posts = await scraper.getLatestPosts(config.instagramUsername, 1);
+        if (!posts || posts.length === 0) {
+          return {
+            statusCode: 400,
+            headers,
+            body: JSON.stringify({ status: 'error', message: 'No se obtuvieron publicaciones' }, null, 2)
+          };
+        }
+
+        const post = posts[0];
+        if (post.caption) {
+          const { translatedText, isTranslated } = await translateToSpanish(post.caption);
+          post.translatedCaption = translatedText;
+          post.isTranslated = isTranslated;
+        }
+
+        const tgResult = await telegram.sendInstagramPost(config.telegramChannelId, post);
+        return {
+          statusCode: 200,
+          headers,
+          body: JSON.stringify({
+            status: 'ok',
+            message: 'Publicación de prueba enviada con éxito',
+            post: {
+              id: post.id,
+              shortcode: post.shortcode,
+              originalCaption: post.caption,
+              translatedCaption: post.translatedCaption
+            },
+            telegramResult: tgResult
+          }, null, 2)
+        };
+      } catch (err) {
+        return {
+          statusCode: 500,
+          headers,
+          body: JSON.stringify({
+            status: 'error',
+            message: err.message,
+            stack: err.stack
           }, null, 2)
         };
       }
