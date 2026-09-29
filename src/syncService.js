@@ -110,8 +110,8 @@ async function runSync(options = {}) {
         publishedAt: new Date().toISOString()
       });
 
-      // Pausa de cortesía para respetar rate-limits de Telegram
-      await sleep(1500);
+      // Pausa para respetar rate-limits de Telegram
+      await sleep(500);
     } catch (err) {
       console.error(`[SyncService] Error al publicar post ${post.id}:`, err.message);
       errors.push({ id: post.id, error: err.message });

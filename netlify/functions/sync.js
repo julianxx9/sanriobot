@@ -188,6 +188,53 @@ exports.handler = async (event, context) => {
       }
     }
 
+    // Probar Netlify Blobs
+    if (params.action === 'test_blobs') {
+      try {
+        const { getStore } = require('@netlify/blobs');
+        const store = getStore({ name: 'sanrio-posted-posts' });
+        await store.setJSON('test_key', { ok: true, now: new Date().toISOString() });
+        const val = await store.get('test_key', { type: 'json' });
+        return {
+          statusCode: 200,
+          headers,
+          body: JSON.stringify({ status: 'ok', blobsAvailable: true, readValue: val }, null, 2)
+        };
+      } catch (bErr) {
+        return {
+          statusCode: 200,
+          headers,
+          body: JSON.stringify({ status: 'error', error: bErr.message, stack: bErr.stack }, null, 2)
+        };
+      }
+    }
+
+    // Importar directamente los últimos 10 posts traducidos
+    if (params.action === 'import_10') {
+      try {
+        const result = await runSync({ force: true, limit: 10 });
+        return {
+          statusCode: 200,
+          headers,
+          body: JSON.stringify({
+            status: 'ok',
+            message: `Se importaron y publicaron ${result.publishedCount} publicaciones traducidas al español.`,
+            result
+          }, null, 2)
+        };
+      } catch (impErr) {
+        return {
+          statusCode: 500,
+          headers,
+          body: JSON.stringify({
+            status: 'error',
+            message: impErr.message,
+            stack: impErr.stack
+          }, null, 2)
+        };
+      }
+    }
+
     // Si se desea configurar el webhook de Telegram directamente
     if (params.action === 'setup_webhook') {
       if (!config.telegramBotToken) {
