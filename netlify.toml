@@ -19,6 +19,11 @@
   status = 200
 
 [[redirects]]
+  from = "/api/sync-background"
+  to = "/.netlify/functions/sync-background"
+  status = 202
+
+[[redirects]]
   from = "/api/telegram-webhook"
   to = "/.netlify/functions/telegram-webhook"
   status = 200

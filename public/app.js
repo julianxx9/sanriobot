@@ -147,39 +147,31 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Importar 10 publicaciones traducidas
+  // Importar 10 publicaciones traducidas usando la Background Function (límite de 15 min)
   async function importLast10() {
-    appendLog('Iniciando importación y traducción de las últimas 10 publicaciones al español...', 'info');
+    appendLog('Iniciando importación y traducción de las últimas 10 publicaciones en segundo plano...', 'info');
     btnImport10.disabled = true;
     btnSync.disabled = true;
     btnDryRun.disabled = true;
 
     try {
-      const res = await fetch('/api/sync?limit=10&force=true', { method: 'POST' });
-      const data = await res.json();
-
-      if (data.status === 'ok') {
-        const r = data.result || {};
-        appendLog(`Éxito: Se procesaron ${r.publishedCount || 0} publicaciones traducidas al español.`, 'success');
-        if (r.published && r.published.length > 0) {
-          r.published.forEach(p => {
-            appendLog(`  -> [${p.shortcode || p.id}] Traducido y enviado: ${p.url || ''}`, 'info');
-          });
-        }
-        if (r.errors && r.errors.length > 0) {
-          r.errors.forEach(e => {
-            appendLog(`  ⚠️ Error en post ${e.id}: ${e.error}`, 'warn');
-          });
-        }
+      const res = await fetch('/api/sync-background?limit=10&force=true', { method: 'POST' });
+      if (res.status === 202 || res.ok) {
+        appendLog('🚀 Proceso iniciado con éxito en segundo plano. Apify está extrayendo los 10 posts de Instagram y se están traduciendo para publicarse en tu canal de Telegram.', 'success');
+        appendLog('📱 ¡Revisa tu canal de Telegram! Los posts irán llegando de forma progresiva.', 'info');
       } else {
-        appendLog(`Error: ${data.message || 'Desconocido'}`, 'error');
+        const data = await res.json().catch(() => ({}));
+        appendLog(`Error al iniciar importación: ${data.message || 'Código ' + res.status}`, 'error');
       }
     } catch (err) {
       appendLog(`Error de red: ${err.message}`, 'error');
     } finally {
-      btnImport10.disabled = false;
-      btnSync.disabled = false;
-      btnDryRun.disabled = false;
-      checkStatus();
+      setTimeout(() => {
+        btnImport10.disabled = false;
+        btnSync.disabled = false;
+        btnDryRun.disabled = false;
+        checkStatus();
+      }, 4000);
     }
   }
 
