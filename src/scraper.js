@@ -145,16 +145,17 @@ async function getPostsFromLatestDataset(username, limit = 12) {
 
   try {
     const actorId = 'apify~instagram-scraper';
-    const runsUrl = `https://api.apify.com/v2/acts/${actorId}/runs?token=${config.apifyApiToken}&limit=3&desc=true&status=SUCCEEDED`;
+    const runsUrl = `https://api.apify.com/v2/acts/${actorId}/runs?token=${config.apifyApiToken}&limit=5&desc=true`;
     const runsRes = await fetch(runsUrl);
     if (!runsRes.ok) return null;
     const runsData = await runsRes.json();
     const runs = runsData?.data?.items;
     if (!Array.isArray(runs) || runs.length === 0) return null;
 
-    const datasetId = runs[0].defaultDatasetId;
-    if (!datasetId) return null;
+    const succeededRun = runs.find(r => r.status === 'SUCCEEDED' && r.defaultDatasetId);
+    if (!succeededRun) return null;
 
+    const datasetId = succeededRun.defaultDatasetId;
     const itemsUrl = `https://api.apify.com/v2/datasets/${datasetId}/items`;
     const itemsRes = await fetch(itemsUrl);
     if (!itemsRes.ok) return null;
