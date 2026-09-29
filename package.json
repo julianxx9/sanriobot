@@ -5,6 +5,7 @@
   "main": "src/scraper.js",
   "scripts": {
     "start": "node scripts/local-sync.js",
+    "import-10": "node scripts/import-10.js",
     "test-scraper": "node scripts/test-scraper.js",
     "build": "echo 'Build OK'"
   },

@@ -47,10 +47,10 @@ function formatPostCaption(post) {
   const title = `🎀 <b>¡Nueva publicación de Sanrio (@${config.instagramUsername})!</b>`;
   const postUrl = post.url || `https://www.instagram.com/p/${post.shortcode}/`;
 
-  let caption = post.caption ? post.caption.trim() : '';
+  let caption = (post.translatedCaption || post.caption || '').trim();
   
   // Límite de caption en Telegram es 1024 caracteres
-  const maxCaptionLength = 750;
+  const maxCaptionLength = 800;
   if (caption.length > maxCaptionLength) {
     caption = caption.substring(0, maxCaptionLength).trim() + '...';
   }

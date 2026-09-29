@@ -29,12 +29,12 @@ function normalizePost(raw) {
  * Estrategia 1: Extraer publicaciones mediante Apify
  * Compatible con los scrapers catalogados en el repositorio de GitHub
  */
-async function scrapeViaApify(username) {
+async function scrapeViaApify(username, limit = 12) {
   if (!config.apifyApiToken) {
     throw new Error('APIFY_API_TOKEN no configurado');
   }
 
-  console.log(`[Scraper] Consultando Apify para el perfil @${username}...`);
+  console.log(`[Scraper] Consultando Apify para el perfil @${username} (límite: ${limit})...`);
 
   // Usamos el actor oficial y popular 'apify/instagram-scraper'
   const actorId = 'apify~instagram-scraper';
@@ -42,7 +42,7 @@ async function scrapeViaApify(username) {
 
   const inputData = {
     usernames: [username],
-    resultsLimit: 6,
+    resultsLimit: Math.max(limit, 10),
     resultsType: 'posts'
   };
 
@@ -134,13 +134,13 @@ async function scrapeViaDirectWeb(username) {
  * Función principal para obtener las últimas publicaciones
  * Aplica estrategia en cascada: Apify (si está configurado) -> Direct Web
  */
-async function getLatestPosts(username = config.instagramUsername) {
+async function getLatestPosts(username = config.instagramUsername, limit = 12) {
   const errors = [];
 
   // Intento 1: Apify si el usuario proveyó API key
   if (config.apifyApiToken) {
     try {
-      const posts = await scrapeViaApify(username);
+      const posts = await scrapeViaApify(username, limit);
       if (posts && posts.length > 0) {
         console.log(`[Scraper] Se obtuvieron ${posts.length} publicaciones vía Apify.`);
         return posts;

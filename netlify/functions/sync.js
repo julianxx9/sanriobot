@@ -131,7 +131,9 @@ exports.handler = async (event, context) => {
     }
 
     const dryRun = params.dryRun === 'true' || params.dryRun === '1';
-    const result = await runSync({ dryRun });
+    const force = params.force === 'true' || params.force === '1';
+    const limit = params.limit ? parseInt(params.limit, 10) : (config.maxPostsPerRun || 10);
+    const result = await runSync({ dryRun, force, limit });
 
     return {
       statusCode: 200,

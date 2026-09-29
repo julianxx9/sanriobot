@@ -2,7 +2,9 @@
  * Script de prueba para validar la extracción de publicaciones de Instagram
  * Uso: node scripts/test-scraper.js [username]
  */
-require('dotenv').config();
+try {
+  require('dotenv').config();
+} catch (_) {}
 const scraper = require('../src/scraper');
 const config = require('../src/config');
 

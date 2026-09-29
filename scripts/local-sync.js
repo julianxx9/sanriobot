@@ -2,7 +2,9 @@
  * Script para ejecutar la sincronización localmente desde la terminal
  * Uso: node scripts/local-sync.js [--dry-run]
  */
-require('dotenv').config();
+try {
+  require('dotenv').config();
+} catch (_) {}
 const { runSync } = require('../src/syncService');
 
 async function main() {

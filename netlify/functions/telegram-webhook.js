@@ -7,6 +7,7 @@ const telegram = require('../../src/telegram');
 const { runSync } = require('../../src/syncService');
 const { getPostedIds } = require('../../src/storage');
 const scraper = require('../../src/scraper');
+const { translateToSpanish } = require('../../src/translator');
 
 exports.handler = async (event, context) => {
   if (event.httpMethod !== 'POST') {
@@ -30,10 +31,11 @@ exports.handler = async (event, context) => {
     // Manejador del comando /start
     if (text.startsWith('/start')) {
       const welcome = `🎀 <b>¡Hola! Soy el Bot de Sanrio para Telegram</b> 🌸\n\n` +
-        `Monitoreo el perfil oficial de Instagram <b>@${config.instagramUsername}</b> y publico las novedades en tu canal.\n\n` +
+        `Monitoreo el perfil oficial de Instagram <b>@${config.instagramUsername}</b> y publico las novedades traducidas al español en tu canal.\n\n` +
         `📌 <b>Comandos disponibles:</b>\n` +
-        `• <code>/sync</code> - Disparar una sincronización manual inmediata\n` +
-        `• <code>/latest</code> - Ver la última publicación de Sanrio\n` +
+        `• <code>/import10</code> - Importa las últimas 10 publicaciones traducidas\n` +
+        `• <code>/sync</code> - Sincroniza publicaciones nuevas pendientes\n` +
+        `• <code>/latest</code> - Ver la última publicación de Sanrio en español\n` +
         `• <code>/status</code> - Ver el estado del bot y configuración\n` +
         `• <code>/help</code> - Ayuda e instrucciones`;
       
@@ -45,9 +47,9 @@ exports.handler = async (event, context) => {
     if (text.startsWith('/help')) {
       const helpMsg = `ℹ️ <b>Instrucciones de Uso:</b>\n\n` +
         `1. Asegúrate de añadir este bot como <b>Administrador</b> a tu canal: <code>${config.telegramChannelId || '@tu_canal'}</code>.\n` +
-        `2. Las publicaciones nuevas se enviarán automáticamente cada hora gracias a Netlify Scheduled Functions.\n` +
-        `3. Puedes forzar una publicación con <code>/sync</code> cuando quieras.\n` +
-        `4. Para consultar el estado actual del bot, escribe <code>/status</code>.`;
+        `2. Las publicaciones nuevas se traducen al español automáticamente.\n` +
+        `3. Usa <code>/import10</code> para enviar las últimas 10 publicaciones de inmediato al canal.\n` +
+        `4. Netlify ejecuta una sincronización automática cada hora.`;
 
       await telegram.sendMessage(chatId, helpMsg);
       return { statusCode: 200, body: 'OK' };
@@ -62,6 +64,7 @@ exports.handler = async (event, context) => {
         `• <b>Perfil de Instagram:</b> @${config.instagramUsername}\n` +
         `• <b>Canal destino:</b> <code>${config.telegramChannelId || 'No configurado'}</code>\n` +
         `• <b>Scraping con Apify:</b> ${config.apifyApiToken ? '✅ Activo' : '⚪ Desactivado (Fallback directo)'}\n` +
+        `• <b>Traducción a español:</b> ✅ Activa (Automática)\n` +
         `• <b>Publicaciones registradas:</b> ${postedIds.size}\n` +
         `• <b>Configuración:</b> ${validation.isValid ? '✅ Válida' : '⚠️ Incompleta'}`;
 
@@ -73,9 +76,14 @@ exports.handler = async (event, context) => {
     if (text.startsWith('/latest')) {
       await telegram.sendMessage(chatId, `🔍 Buscando la última publicación de @${config.instagramUsername}...`);
       try {
-        const posts = await scraper.getLatestPosts(config.instagramUsername);
+        const posts = await scraper.getLatestPosts(config.instagramUsername, 1);
         if (posts && posts.length > 0) {
           const latest = posts[0];
+          if (latest.caption) {
+            const { translatedText, isTranslated } = await translateToSpanish(latest.caption);
+            latest.translatedCaption = translatedText;
+            latest.isTranslated = isTranslated;
+          }
           await telegram.sendInstagramPost(chatId, latest);
         } else {
           await telegram.sendMessage(chatId, 'No se encontraron publicaciones disponibles actualmente.');
@@ -86,12 +94,34 @@ exports.handler = async (event, context) => {
       return { statusCode: 200, body: 'OK' };
     }
 
+    // Manejador del comando /import10
+    if (text.startsWith('/import10')) {
+      await telegram.sendMessage(chatId, `⏳ Importando y traduciendo las últimas 10 publicaciones de @${config.instagramUsername}...`);
+
+      try {
+        const result = await runSync({ limit: 10, force: true });
+        let report = `✅ <b>Importación completada:</b>\n\n` +
+          `• Posts analizados: ${result.totalScraped}\n` +
+          `• Posts publicados traducidos al canal: ${result.publishedCount}\n`;
+
+        if (result.errors && result.errors.length > 0) {
+          report += `\n⚠️ Hubo ${result.errors.length} error(es) durante el envío.`;
+        }
+
+        await telegram.sendMessage(chatId, report);
+      } catch (err) {
+        await telegram.sendMessage(chatId, `❌ Error durante la importación: ${err.message}`);
+      }
+
+      return { statusCode: 200, body: 'OK' };
+    }
+
     // Manejador del comando /sync
     if (text.startsWith('/sync')) {
       await telegram.sendMessage(chatId, `⏳ Iniciando sincronización de @${config.instagramUsername}...`);
 
       try {
-        const result = await runSync();
+        const result = await runSync({ limit: 10 });
         let report = `✅ <b>Sincronización finalizada:</b>\n\n` +
           `• Posts analizados: ${result.totalScraped}\n` +
           `• Posts nuevos detectados: ${result.newFound}\n` +
