@@ -24,8 +24,47 @@ exports.handler = async (event, context) => {
 
   try {
     const params = event.queryStringParameters || {};
-    
-    // Si se consulta el estado general del bot
+
+    // Autenticación para el panel de administración
+    if (params.action === 'login') {
+      let username = params.username;
+      let password = params.password;
+
+      if (event.body) {
+        try {
+          const body = JSON.parse(event.body);
+          if (body.username) username = body.username;
+          if (body.password) password = body.password;
+        } catch (_) {}
+      }
+
+      username = (username || '').trim().toLowerCase();
+      password = (password || '').trim();
+
+      const isValid = (username === 'anderson' && (password === '4nders()n.' || password === '4nders()n'));
+
+      if (isValid) {
+        return {
+          statusCode: 200,
+          headers,
+          body: JSON.stringify({
+            status: 'ok',
+            message: 'Autenticación exitosa',
+            username: 'anderson',
+            token: 'auth_' + Buffer.from('anderson:' + Date.now()).toString('base64')
+          }, null, 2)
+        };
+      } else {
+        return {
+          statusCode: 401,
+          headers,
+          body: JSON.stringify({
+            status: 'error',
+            message: 'Usuario o contraseña incorrectos.'
+          }, null, 2)
+        };
+      }
+    }
     if (params.action === 'status') {
       const validation = config.validate();
       const postedIds = await getPostedIds();

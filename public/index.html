@@ -10,8 +10,62 @@
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-  <div class="container">
+  <!-- Modal / Pantalla de Inicio de Sesión -->
+  <div id="login-overlay" class="login-overlay">
+    <div class="login-card">
+      <div class="login-header">
+        <span class="ribbon-icon">🎀</span>
+        <h2>Iniciar Sesión</h2>
+        <p class="login-subtitle">Panel de Control &middot; Sanrio Telegram Bot</p>
+      </div>
+
+      <form id="login-form" class="login-form">
+        <div class="form-group">
+          <label for="login-username">Usuario</label>
+          <div class="input-wrapper">
+            <span class="input-icon">👤</span>
+            <input type="text" id="login-username" placeholder="Ingresa tu usuario" required autocomplete="username" autofocus>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="login-password">Contraseña</label>
+          <div class="input-wrapper">
+            <span class="input-icon">🔒</span>
+            <input type="password" id="login-password" placeholder="Ingresa tu contraseña" required autocomplete="current-password">
+            <button type="button" id="btn-toggle-password" class="btn-toggle-password" title="Mostrar u ocultar contraseña">👁️</button>
+          </div>
+        </div>
+
+        <div id="login-error" class="login-error" style="display: none;">
+          <span class="error-icon">⚠️</span>
+          <span id="login-error-msg">Usuario o contraseña incorrectos.</span>
+        </div>
+
+        <button type="submit" id="btn-login-submit" class="btn btn-primary btn-block">
+          <span>🌸 Ingresar al Panel</span>
+        </button>
+      </form>
+
+      <div class="login-footer">
+        <small>Acceso administrativo restringido &middot; Sanrio Bot</small>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contenedor Principal del Dashboard -->
+  <div class="container" id="dashboard-container" style="display: none;">
     <header class="header">
+      <div class="top-nav" id="top-nav">
+        <div class="user-pill">
+          <span class="user-avatar">👤</span>
+          <span class="user-name">Sesión: <b id="current-user-display">anderson</b></span>
+        </div>
+        <button id="btn-logout" class="btn btn-sm btn-logout" title="Cerrar sesión">
+          🚪 Cerrar Sesión
+        </button>
+      </div>
+
       <div class="logo-area">
         <span class="ribbon-icon">🎀</span>
         <h1>Sanrio Telegram Bot</h1>

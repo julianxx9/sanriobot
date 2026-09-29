@@ -18,6 +18,154 @@ document.addEventListener('DOMContentLoaded', () => {
   const scraperTypeEl = document.getElementById('scraper-type');
   const postsCountEl = document.getElementById('posts-count');
 
+  // Elementos de la interfaz de inicio de sesión
+  const loginOverlay = document.getElementById('login-overlay');
+  const dashboardContainer = document.getElementById('dashboard-container');
+  const loginForm = document.getElementById('login-form');
+  const loginUsernameInput = document.getElementById('login-username');
+  const loginPasswordInput = document.getElementById('login-password');
+  const loginError = document.getElementById('login-error');
+  const loginErrorMsg = document.getElementById('login-error-msg');
+  const btnTogglePassword = document.getElementById('btn-toggle-password');
+  const btnLogout = document.getElementById('btn-logout');
+  const currentUserDisplay = document.getElementById('current-user-display');
+
+  const AUTH_STORAGE_KEY = 'sanrio_bot_auth_session';
+
+  function getStoredSession() {
+    try {
+      const raw = localStorage.getItem(AUTH_STORAGE_KEY);
+      if (!raw) return null;
+      const data = JSON.parse(raw);
+      if (data && data.user) return data;
+    } catch (_) {}
+    return null;
+  }
+
+  function setSession(username, token) {
+    try {
+      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({
+        user: username,
+        token: token || 'authenticated',
+        loggedInAt: Date.now()
+      }));
+    } catch (_) {}
+  }
+
+  function clearSession() {
+    try {
+      localStorage.removeItem(AUTH_STORAGE_KEY);
+    } catch (_) {}
+  }
+
+  function showDashboard(username) {
+    if (currentUserDisplay) {
+      currentUserDisplay.textContent = username || 'anderson';
+    }
+    if (loginOverlay) {
+      loginOverlay.style.display = 'none';
+    }
+    if (dashboardContainer) {
+      dashboardContainer.style.display = 'block';
+    }
+    checkStatus();
+  }
+
+  function showLogin() {
+    if (dashboardContainer) {
+      dashboardContainer.style.display = 'none';
+    }
+    if (loginOverlay) {
+      loginOverlay.style.display = 'flex';
+    }
+    if (loginError) {
+      loginError.style.display = 'none';
+    }
+    if (loginPasswordInput) {
+      loginPasswordInput.value = '';
+    }
+    if (loginUsernameInput) {
+      loginUsernameInput.focus();
+    }
+  }
+
+  // Alternar visibilidad de contraseña
+  if (btnTogglePassword && loginPasswordInput) {
+    btnTogglePassword.addEventListener('click', () => {
+      const isPassword = loginPasswordInput.type === 'password';
+      loginPasswordInput.type = isPassword ? 'text' : 'password';
+      btnTogglePassword.textContent = isPassword ? '🙈' : '👁️';
+    });
+  }
+
+  // Envío del formulario de login
+  if (loginForm) {
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = (loginUsernameInput.value || '').trim();
+      const password = (loginPasswordInput.value || '').trim();
+
+      const btnSubmit = document.getElementById('btn-login-submit');
+      if (btnSubmit) {
+        btnSubmit.disabled = true;
+        btnSubmit.innerHTML = '<span>Verificando...</span>';
+      }
+
+      // Credenciales requeridas: usuario = anderson, contraseña = 4nders()n. o 4nders()n
+      const isUserValid = username.toLowerCase() === 'anderson';
+      const isPassValid = (password === '4nders()n.' || password === '4nders()n');
+
+      if (isUserValid && isPassValid) {
+        setSession('anderson');
+        if (loginError) loginError.style.display = 'none';
+        showDashboard('anderson');
+        appendLog('Sesión iniciada con éxito como anderson.', 'success');
+      } else {
+        // Validación complementaria contra la API
+        try {
+          const res = await fetch('/api/sync?action=login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+          });
+          const data = await res.json();
+          if (res.ok && data.status === 'ok') {
+            setSession(data.username || 'anderson', data.token);
+            if (loginError) loginError.style.display = 'none';
+            showDashboard(data.username || 'anderson');
+            appendLog('Sesión iniciada con éxito como anderson.', 'success');
+            return;
+          }
+        } catch (_) {}
+
+        if (loginError) {
+          loginError.style.display = 'flex';
+          loginError.classList.remove('shake');
+          void loginError.offsetWidth; // Trigger reflow para animación
+          loginError.classList.add('shake');
+        }
+        if (loginPasswordInput) {
+          loginPasswordInput.value = '';
+          loginPasswordInput.focus();
+        }
+      }
+
+      if (btnSubmit) {
+        btnSubmit.disabled = false;
+        btnSubmit.innerHTML = '<span>🌸 Ingresar al Panel</span>';
+      }
+    });
+  }
+
+  // Cerrar sesión
+  if (btnLogout) {
+    btnLogout.addEventListener('click', () => {
+      clearSession();
+      appendLog('Sesión cerrada por el usuario.', 'info');
+      showLogin();
+    });
+  }
+
   // Pre-llenar input con la URL actual del sitio
   if (window.location.origin && window.location.origin.startsWith('http')) {
     siteUrlInput.value = window.location.origin;
@@ -189,6 +337,11 @@ document.addEventListener('DOMContentLoaded', () => {
     consoleOutput.innerHTML = '';
   });
 
-  // Ejecutar verificación inicial
-  checkStatus();
+  // Control de inicio: verificar sesión activa
+  const existingSession = getStoredSession();
+  if (existingSession && existingSession.user) {
+    showDashboard(existingSession.user);
+  } else {
+    showLogin();
+  }
 });
