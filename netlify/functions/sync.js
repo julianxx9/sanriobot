@@ -90,6 +90,54 @@ exports.handler = async (event, context) => {
       }
     }
 
+    // Probar conexión con la API de Apify
+    if (params.action === 'test_apify') {
+      if (!config.apifyApiToken) {
+        return {
+          statusCode: 400,
+          headers,
+          body: JSON.stringify({
+            status: 'error',
+            message: 'APIFY_API_TOKEN no está configurado.'
+          }, null, 2)
+        };
+      }
+
+      try {
+        // 1. Verificar usuario y plan en Apify
+        const meRes = await fetch(`https://api.apify.com/v2/users/me?token=${config.apifyApiToken}`);
+        const meData = await meRes.json();
+
+        // 2. Obtener últimas ejecuciones del actor en Apify
+        const runsRes = await fetch(`https://api.apify.com/v2/acts/apify~instagram-scraper/runs?token=${config.apifyApiToken}&limit=3&desc=true`);
+        const runsData = runsRes.ok ? await runsRes.json() : { error: `HTTP ${runsRes.status}` };
+
+        return {
+          statusCode: 200,
+          headers,
+          body: JSON.stringify({
+            status: 'ok',
+            tokenValid: meRes.ok,
+            user: meData?.data ? {
+              username: meData.data.username,
+              email: meData.data.email,
+              plan: meData.data.plan
+            } : meData,
+            recentRuns: runsData?.data?.items || runsData
+          }, null, 2)
+        };
+      } catch (err) {
+        return {
+          statusCode: 500,
+          headers,
+          body: JSON.stringify({
+            status: 'error',
+            message: `Fallo al conectar con Apify: ${err.message}`
+          }, null, 2)
+        };
+      }
+    }
+
     // Si se desea configurar el webhook de Telegram directamente
     if (params.action === 'setup_webhook') {
       if (!config.telegramBotToken) {

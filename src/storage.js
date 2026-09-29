@@ -73,7 +73,7 @@ async function getPostedIds() {
   }
 
   const store = getNetlifyStore();
-  if (store && config.isNetlify) {
+  if (store) {
     try {
       const blob = await store.get(BLOB_KEY, { type: 'json' });
       if (Array.isArray(blob)) {
@@ -125,7 +125,7 @@ async function markAsPosted(postIds) {
   memoryCache = set;
 
   const store = getNetlifyStore();
-  if (store && config.isNetlify) {
+  if (store) {
     try {
       await store.setJSON(BLOB_KEY, array);
     } catch (err) {
@@ -149,7 +149,7 @@ async function recordRunStatus(data) {
   };
 
   const store = getNetlifyStore();
-  if (store && config.isNetlify) {
+  if (store) {
     try {
       await store.setJSON(LAST_RUN_KEY, payload);
     } catch (err) {
@@ -170,7 +170,7 @@ async function recordRunStatus(data) {
  */
 async function getLastRunStatus() {
   const store = getNetlifyStore();
-  if (store && config.isNetlify) {
+  if (store) {
     try {
       const data = await store.get(LAST_RUN_KEY, { type: 'json' });
       if (data) return data;
