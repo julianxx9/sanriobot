@@ -61,11 +61,12 @@ async function runSync(options = {}) {
     };
   }
 
-  // Ordenar cronológicamente (más antiguo primero para que aparezcan en orden en el canal)
-  newPosts.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
-
-  // Limitar a la cantidad solicitada
+  // 1. Asegurar tomar las publicaciones más recientes
+  newPosts.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
   const postsToPublish = newPosts.slice(0, limit);
+
+  // 2. Ordenar cronológicamente (más antiguo primero) para que al publicarse aparezcan en orden natural en el canal
+  postsToPublish.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
   const published = [];
   const errors = [];
 

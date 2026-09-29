@@ -59,8 +59,37 @@ function formatPostCaption(post) {
   if (caption) {
     formatted += `${escapeHtml(caption)}\n\n`;
   }
-  formatted += `💖 <a href="${postUrl}">Ver publicación en Instagram</a>`;
+  formatted += `💖 <a href="${escapeHtml(postUrl)}">Ver publicación en Instagram</a>`;
   return formatted;
+}
+
+/**
+ * Envía una publicación al canal de Telegram
+ * @param {string} targetChatId - ID del canal o chat (opcional, usa el de config si no se especifica)
+ * @param {object} post - Objeto con información del post
+ */
+/**
+ * Envía una foto a Telegram mediante buffer binario (garantiza entrega ante bloqueos de CDN)
+ */
+async function sendPhotoBuffer(chatId, buffer, filename, caption) {
+  const form = new FormData();
+  form.append('chat_id', chatId);
+  form.append('caption', caption);
+  form.append('parse_mode', 'HTML');
+  const blob = new Blob([buffer], { type: 'image/jpeg' });
+  form.append('photo', blob, filename || 'photo.jpg');
+
+  const url = `${BASE_URL}/bot${config.telegramBotToken}/sendPhoto`;
+  const response = await fetch(url, {
+    method: 'POST',
+    body: form
+  });
+
+  const result = await response.json();
+  if (!result.ok) {
+    throw new Error(`Telegram sendPhoto (buffer) error: ${result.description}`);
+  }
+  return result.result;
 }
 
 /**
@@ -76,8 +105,9 @@ async function sendInstagramPost(targetChatId, post) {
 
   const caption = formatPostCaption(post);
   const parse_mode = 'HTML';
+  const postUrl = post.url || `https://www.instagram.com/p/${post.shortcode}/`;
 
-  // Si es un video y tenemos URL directa del video
+  // 1. Si es video y tenemos url directa
   if (post.isVideo && post.videoUrl) {
     try {
       return await callTelegramApi('sendVideo', {
@@ -88,11 +118,11 @@ async function sendInstagramPost(targetChatId, post) {
         supports_streaming: true
       });
     } catch (err) {
-      console.warn('Fallo al enviar como video, intentando como foto/enlace:', err.message);
+      console.warn('Fallo al enviar como video URL directa, probando imagen:', err.message);
     }
   }
 
-  // Si tiene imagen
+  // 2. Si tiene imagen, probar por URL
   const imageUrl = post.displayUrl || post.imageUrl;
   if (imageUrl) {
     try {
@@ -102,16 +132,31 @@ async function sendInstagramPost(targetChatId, post) {
         caption,
         parse_mode
       });
-    } catch (err) {
-      console.warn('Fallo al enviar foto por URL directa, intentando con mensaje de texto:', err.message);
+    } catch (photoUrlErr) {
+      console.warn('Fallo al enviar foto por URL, intentando descarga de buffer directa:', photoUrlErr.message);
+
+      // 3. Descargar el buffer de imagen directamente para saltar bloqueos de Instagram
+      try {
+        const imgRes = await fetch(imageUrl, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+          }
+        });
+        if (imgRes.ok) {
+          const arrayBuffer = await imgRes.arrayBuffer();
+          const buffer = Buffer.from(arrayBuffer);
+          return await sendPhotoBuffer(chatId, buffer, `sanrio_${post.shortcode || post.id}.jpg`, caption);
+        }
+      } catch (bufErr) {
+        console.warn('Fallo al subir imagen en buffer:', bufErr.message);
+      }
     }
   }
 
-  // Fallback a mensaje de texto enriquecido con enlace
-  const text = `${caption}\n\n${imageUrl ? `<a href="${imageUrl}">&#8205;</a>` : ''}`;
+  // 4. Fallback seguro a mensaje de texto formateado en HTML
   return await callTelegramApi('sendMessage', {
     chat_id: chatId,
-    text,
+    text: caption,
     parse_mode,
     disable_web_page_preview: false
   });
