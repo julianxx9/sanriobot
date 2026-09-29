@@ -10,18 +10,27 @@ const config = require('./config');
  * Normaliza un objeto de post a un formato unificado
  */
 function normalizePost(raw) {
-  const shortcode = raw.shortcode || raw.shortCode || raw.code || '';
-  const postUrl = raw.url || (shortcode ? `https://www.instagram.com/p/${shortcode}/` : '');
-  
+  let shortcode = raw.shortcode || raw.shortCode || raw.code || '';
+  if (!shortcode && raw.url && typeof raw.url === 'string') {
+    const match = raw.url.match(/\/p\/([A-Za-z0-9_-]+)/);
+    if (match) shortcode = match[1];
+  }
+
+  const postUrl = (raw.url && typeof raw.url === 'string' && raw.url.startsWith('http'))
+    ? raw.url
+    : (shortcode ? `https://www.instagram.com/p/${shortcode}/` : '');
+
+  const id = String(raw.id || shortcode || raw.pk || Date.now());
+
   return {
-    id: String(raw.id || shortcode || Date.now()),
-    shortcode: shortcode,
+    id,
+    shortcode: shortcode || id,
     url: postUrl,
     caption: raw.caption || raw.text || '',
-    displayUrl: raw.displayUrl || raw.imageUrl || raw.display_url || '',
+    displayUrl: raw.displayUrl || raw.imageUrl || raw.display_url || (raw.images && raw.images[0]) || '',
     videoUrl: raw.videoUrl || raw.video_url || null,
-    isVideo: Boolean(raw.isVideo || raw.is_video),
-    timestamp: raw.timestamp || raw.taken_at_timestamp || Math.floor(Date.now() / 1000)
+    isVideo: Boolean(raw.isVideo || raw.is_video || raw.type === 'Video' || raw.videoUrl),
+    timestamp: raw.timestamp ? (typeof raw.timestamp === 'string' ? Math.floor(new Date(raw.timestamp).getTime() / 1000) : raw.timestamp) : (raw.taken_at_timestamp || Math.floor(Date.now() / 1000))
   };
 }
 
@@ -38,9 +47,10 @@ async function scrapeViaApify(username, limit = 12) {
 
   // Usamos el actor oficial y popular 'apify/instagram-scraper'
   const actorId = 'apify~instagram-scraper';
-  const apifyUrl = `https://api.apify.com/v2/acts/${actorId}/run-sync-get-dataset-items?token=${config.apifyApiToken}&timeout=60`;
+  const apifyUrl = `https://api.apify.com/v2/acts/${actorId}/run-sync-get-dataset-items?token=${config.apifyApiToken}&timeout=90`;
 
   const inputData = {
+    directUrls: [`https://www.instagram.com/${username}/`],
     usernames: [username],
     resultsLimit: Math.max(limit, 10),
     resultsType: 'posts'
@@ -65,16 +75,12 @@ async function scrapeViaApify(username, limit = 12) {
     return [];
   }
 
-  return items.map(item => normalizePost({
-    id: item.id || item.shortCode,
-    shortcode: item.shortCode,
-    url: item.url || `https://www.instagram.com/p/${item.shortCode}/`,
-    caption: item.caption || '',
-    displayUrl: item.displayUrl || (item.images && item.images[0]) || '',
-    videoUrl: item.videoUrl || null,
-    isVideo: item.type === 'Video' || Boolean(item.videoUrl),
-    timestamp: item.timestamp ? new Date(item.timestamp).getTime() / 1000 : null
-  }));
+  // Filtrar solo los elementos que son publicaciones reales
+  const validPosts = items
+    .filter(item => item && (item.shortCode || item.code || (typeof item.url === 'string' && item.url.includes('/p/')) || item.displayUrl || item.type === 'Image' || item.type === 'Video' || item.type === 'Sidecar'))
+    .map(normalizePost);
+
+  return validPosts;
 }
 
 /**
