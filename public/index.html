@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sanrio Telegram Bot &middot; Panel de Control</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <div class="logo-area">
+        <span class="ribbon-icon">🎀</span>
+        <h1>Sanrio Telegram Bot</h1>
+      </div>
+      <p class="subtitle">Monitoreo automático de Instagram @sanrio y publicación en tu canal de Telegram con Netlify</p>
+    </header>
+
+    <!-- Tarjetas de estado -->
+    <section class="status-grid">
+      <div class="card status-card" id="card-bot">
+        <div class="card-icon">🤖</div>
+        <div class="card-content">
+          <h3>Bot de Telegram</h3>
+          <p class="status-indicator" id="bot-status"><span class="badge badge-loading">Consultando...</span></p>
+          <small id="bot-username">--</small>
+        </div>
+      </div>
+
+      <div class="card status-card" id="card-channel">
+        <div class="card-icon">📢</div>
+        <div class="card-content">
+          <h3>Canal Destino</h3>
+          <p class="channel-name" id="channel-name">--</p>
+          <small>Canal donde se publican los posts</small>
+        </div>
+      </div>
+
+      <div class="card status-card" id="card-instagram">
+        <div class="card-icon">📸</div>
+        <div class="card-content">
+          <h3>Perfil Monitoreado</h3>
+          <p class="ig-profile" id="ig-profile">@sanrio</p>
+          <small><a href="https://www.instagram.com/sanrio/" target="_blank" rel="noopener">Ver en Instagram ↗</a></small>
+        </div>
+      </div>
+
+      <div class="card status-card" id="card-scraper">
+        <div class="card-icon">⚡</div>
+        <div class="card-content">
+          <h3>Motor de Scraping</h3>
+          <p id="scraper-type"><span class="badge badge-info">Direct Web / Apify</span></p>
+          <small id="posts-count">0 publicaciones en memoria</small>
+        </div>
+      </div>
+    </section>
+
+    <!-- Acciones principales -->
+    <section class="card actions-card">
+      <h2>🚀 Acciones Rápidas</h2>
+      <div class="action-buttons">
+        <button id="btn-sync" class="btn btn-primary">
+          <span class="btn-icon">🔄</span> Sincronizar Ahora
+        </button>
+        <button id="btn-dry-run" class="btn btn-secondary">
+          <span class="btn-icon">🧪</span> Simulación (Dry Run)
+        </button>
+        <button id="btn-check-status" class="btn btn-outline">
+          <span class="btn-icon">🩺</span> Verificar Estado
+        </button>
+      </div>
+
+      <div class="webhook-section">
+        <h3>🔗 Configurar Webhook de Telegram</h3>
+        <p class="help-text">Si desplegaste en Netlify, ingresa la URL de tu sitio para registrar el webhook con Telegram (o déjalo en blanco para auto-detectar):</p>
+        <div class="input-group">
+          <input type="url" id="site-url-input" placeholder="https://tu-sitio.netlify.app">
+          <button id="btn-setup-webhook" class="btn btn-accent">Vincular Webhook</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Consola de Resultados / Logs -->
+    <section class="card console-card">
+      <div class="console-header">
+        <span class="console-dot red"></span>
+        <span class="console-dot yellow"></span>
+        <span class="console-dot green"></span>
+        <span class="console-title">Registro de Eventos y Actividad</span>
+        <button id="btn-clear-logs" class="btn-sm">Limpiar</button>
+      </div>
+      <div class="console-body" id="console-output">
+        <p class="log-line info">[Sistema] Panel de control cargado. Haz clic en "Verificar Estado" o "Sincronizar Ahora".</p>
+      </div>
+    </section>
+
+    <!-- Guía rápida de configuración -->
+    <section class="card guide-card">
+      <h2>🌸 Pasos Rápidos para Desplegar en Netlify</h2>
+      <ol class="steps-list">
+        <li>Crea tu bot con <b>@BotFather</b> en Telegram y copia el token.</li>
+        <li>Crea un canal en Telegram, añade tu bot como <b>Administrador</b> (con permiso de publicar mensajes).</li>
+        <li>Sube este proyecto a un repositorio en GitHub o conéctalo directamente a <b>Netlify</b>.</li>
+        <li>En Netlify &gt; <i>Site Settings</i> &gt; <i>Environment variables</i>, añade:
+          <code>TELEGRAM_BOT_TOKEN</code> y <code>TELEGRAM_CHANNEL_ID</code>.
+        </li>
+        <li>(Opcional) Agrega <code>APIFY_API_TOKEN</code> para máxima estabilidad con proxies de Apify.</li>
+        <li>¡Listo! Netlify ejecutará la función programada <code>scheduled-sync</code> cada hora automáticamente.</li>
+      </ol>
+    </section>
+
+    <footer class="footer">
+      <p>Hecho con 💖 para fans de Sanrio &middot; Compatible con Netlify Functions</p>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

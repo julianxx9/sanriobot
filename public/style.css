@@ -1,0 +1,379 @@
+:root {
+  --sanrio-pink: #ff85a2;
+  --sanrio-pink-dark: #f06292;
+  --sanrio-pink-light: #fff0f5;
+  --sanrio-accent: #b388ff;
+  --sanrio-blue: #80d8ff;
+  --sanrio-yellow: #fff59d;
+  --bg-gradient: linear-gradient(135deg, #fff0f5 0%, #f3e5f5 50%, #e1f5fe 100%);
+  --card-bg: #ffffff;
+  --text-main: #374151;
+  --text-muted: #6b7280;
+  --radius-lg: 20px;
+  --radius-md: 12px;
+  --shadow-sm: 0 4px 6px -1px rgba(255, 133, 162, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 10px 25px -5px rgba(255, 133, 162, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg-gradient);
+  color: var(--text-main);
+  min-height: 100vh;
+  padding: 30px 15px;
+}
+
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+/* Header */
+.header {
+  text-align: center;
+  margin-bottom: 35px;
+}
+
+.logo-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.ribbon-icon {
+  font-size: 2.4rem;
+  animation: bounce 2s infinite ease-in-out;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.header h1 {
+  font-family: 'Fredoka', cursive, sans-serif;
+  font-size: 2.3rem;
+  color: #d81b60;
+  letter-spacing: -0.5px;
+}
+
+.subtitle {
+  color: var(--text-muted);
+  font-size: 1.05rem;
+}
+
+/* Tarjetas */
+.card {
+  background: var(--card-bg);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-md);
+  border: 1px solid rgba(255, 133, 162, 0.2);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px -4px rgba(255, 133, 162, 0.25);
+}
+
+/* Grid de estado */
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 18px;
+  margin-bottom: 24px;
+}
+
+.status-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px;
+  margin-bottom: 0;
+}
+
+.card-icon {
+  font-size: 2rem;
+  background: var(--sanrio-pink-light);
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.card-content h3 {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.card-content p {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #374151;
+}
+
+.card-content small {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  display: block;
+  margin-top: 2px;
+}
+
+.card-content a {
+  color: var(--sanrio-pink-dark);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.card-content a:hover {
+  text-decoration: underline;
+}
+
+/* Badges */
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.badge-loading {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.badge-success {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.badge-error {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.badge-info {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
+/* Acciones y botones */
+.actions-card h2, .guide-card h2 {
+  font-family: 'Fredoka', cursive, sans-serif;
+  font-size: 1.35rem;
+  color: #ad1457;
+  margin-bottom: 16px;
+}
+
+.action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.btn {
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  padding: 12px 22px;
+  border-radius: 50px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--sanrio-pink) 0%, var(--sanrio-pink-dark) 100%);
+  color: white;
+  box-shadow: 0 4px 14px rgba(240, 98, 146, 0.4);
+}
+
+.btn-primary:hover {
+  box-shadow: 0 6px 18px rgba(240, 98, 146, 0.6);
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background: linear-gradient(135deg, #a78bfa 0%, var(--sanrio-accent) 100%);
+  color: white;
+  box-shadow: 0 4px 14px rgba(179, 136, 255, 0.4);
+}
+
+.btn-secondary:hover {
+  box-shadow: 0 6px 18px rgba(179, 136, 255, 0.6);
+  transform: translateY(-1px);
+}
+
+.btn-outline {
+  background: transparent;
+  border: 2px solid var(--sanrio-pink);
+  color: var(--sanrio-pink-dark);
+}
+
+.btn-outline:hover {
+  background: var(--sanrio-pink-light);
+}
+
+.btn-accent {
+  background: #38bdf8;
+  color: white;
+}
+
+.btn-accent:hover {
+  background: #0284c7;
+}
+
+.btn-sm {
+  font-size: 0.75rem;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid #4b5563;
+  background: #374151;
+  color: #e5e7eb;
+  cursor: pointer;
+}
+
+.btn-sm:hover {
+  background: #4b5563;
+}
+
+/* Sección Webhook */
+.webhook-section {
+  border-top: 1px dashed rgba(255, 133, 162, 0.3);
+  padding-top: 18px;
+}
+
+.webhook-section h3 {
+  font-size: 1.05rem;
+  color: #4b5563;
+  margin-bottom: 6px;
+}
+
+.help-text {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+.input-group {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.input-group input {
+  flex: 1;
+  min-width: 250px;
+  padding: 10px 16px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 50px;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.input-group input:focus {
+  border-color: var(--sanrio-pink);
+}
+
+/* Consola / Terminal */
+.console-card {
+  background: #1e1e2f;
+  color: #e2e8f0;
+  border: none;
+  padding: 0;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.console-header {
+  background: #141420;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.console-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.console-dot.red { background: #ef4444; }
+.console-dot.yellow { background: #f59e0b; }
+.console-dot.green { background: #10b981; }
+
+.console-title {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  flex: 1;
+  margin-left: 6px;
+}
+
+.console-body {
+  padding: 16px;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 0.85rem;
+  min-height: 160px;
+  max-height: 320px;
+  overflow-y: auto;
+  line-height: 1.6;
+}
+
+.log-line {
+  margin-bottom: 4px;
+}
+
+.log-line.info { color: #93c5fd; }
+.log-line.success { color: #86efac; }
+.log-line.warn { color: #fde047; }
+.log-line.error { color: #fca5a5; }
+
+/* Guía de pasos */
+.steps-list {
+  padding-left: 24px;
+  line-height: 1.8;
+  font-size: 0.95rem;
+}
+
+.steps-list code {
+  background: var(--sanrio-pink-light);
+  color: #be185d;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+
+/* Footer */
+.footer {
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-top: 20px;
+}

@@ -1,0 +1,30 @@
+{
+  "name": "sanrio-telegram-bot",
+  "version": "1.0.0",
+  "description": "Bot de Telegram para publicar contenido del Instagram oficial de Sanrio en un canal, desplegable en Netlify",
+  "main": "src/scraper.js",
+  "scripts": {
+    "start": "node scripts/local-sync.js",
+    "test-scraper": "node scripts/test-scraper.js",
+    "build": "echo 'Build OK'"
+  },
+  "keywords": [
+    "telegram",
+    "bot",
+    "instagram",
+    "sanrio",
+    "scraper",
+    "netlify",
+    "serverless"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@netlify/blobs": "^8.0.0",
+    "@netlify/functions": "^2.8.2",
+    "dotenv": "^16.4.5"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

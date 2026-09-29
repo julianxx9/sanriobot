@@ -1,0 +1,29 @@
+[build]
+  publish = "public"
+  functions = "netlify/functions"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+[functions]
+  node_bundler = "esbuild"
+
+# Ejecuta la sincronización cada hora automáticamente
+[functions."scheduled-sync"]
+  schedule = "@hourly"
+
+# Redirige llamadas /api/* a las funciones serverless correspondientes
+[[redirects]]
+  from = "/api/sync"
+  to = "/.netlify/functions/sync"
+  status = 200
+
+[[redirects]]
+  from = "/api/telegram-webhook"
+  to = "/.netlify/functions/telegram-webhook"
+  status = 200
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
