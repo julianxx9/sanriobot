@@ -137,10 +137,61 @@ async function scrapeViaDirectWeb(username) {
 
 /**
  * Función principal para obtener las últimas publicaciones
- * Aplica estrategia en cascada: Apify (si está configurado) -> Direct Web
+/**
+ * Estrategia 0: Recuperar publicaciones del dataset más reciente de Apify (ultra rápido, ~300ms)
  */
-async function getLatestPosts(username = config.instagramUsername, limit = 12) {
+async function getPostsFromLatestDataset(username, limit = 12) {
+  if (!config.apifyApiToken) return null;
+
+  try {
+    const actorId = 'apify~instagram-scraper';
+    const runsUrl = `https://api.apify.com/v2/acts/${actorId}/runs?token=${config.apifyApiToken}&limit=3&desc=true&status=SUCCEEDED`;
+    const runsRes = await fetch(runsUrl);
+    if (!runsRes.ok) return null;
+    const runsData = await runsRes.json();
+    const runs = runsData?.data?.items;
+    if (!Array.isArray(runs) || runs.length === 0) return null;
+
+    const datasetId = runs[0].defaultDatasetId;
+    if (!datasetId) return null;
+
+    const itemsUrl = `https://api.apify.com/v2/datasets/${datasetId}/items`;
+    const itemsRes = await fetch(itemsUrl);
+    if (!itemsRes.ok) return null;
+    const items = await itemsRes.json();
+
+    if (Array.isArray(items) && items.length > 0) {
+      const validPosts = items
+        .filter(item => item && (item.shortCode || item.code || (typeof item.url === 'string' && (item.url.includes('/p/') || item.url.includes('/reel/') || item.url.includes('/tv/'))) || item.displayUrl || item.type === 'Image' || item.type === 'Video' || item.type === 'Sidecar'))
+        .map(normalizePost);
+
+      if (validPosts.length >= Math.min(limit, 10)) {
+        console.log(`[Scraper] Se recuperaron ${validPosts.length} publicaciones del dataset previo en Apify.`);
+        return validPosts;
+      }
+    }
+  } catch (e) {
+    console.warn('[Scraper] Falló recuperación de dataset previo:', e.message);
+  }
+  return null;
+}
+
+/**
+ * Función principal para obtener las últimas publicaciones
+ * Aplica estrategia en cascada: Dataset Apify -> Ejecutar Apify -> Direct Web
+ */
+async function getLatestPosts(username = config.instagramUsername, limit = 12, forceFresh = false) {
   const errors = [];
+
+  // Intento 0: Dataset reciente de Apify (si no se fuerza un scrape nuevo)
+  if (!forceFresh && config.apifyApiToken) {
+    try {
+      const cached = await getPostsFromLatestDataset(username, limit);
+      if (cached && cached.length > 0) {
+        return cached;
+      }
+    } catch (_) {}
+  }
 
   // Intento 1: Apify si el usuario proveyó API key
   if (config.apifyApiToken) {
@@ -173,6 +224,7 @@ async function getLatestPosts(username = config.instagramUsername, limit = 12) {
 
 module.exports = {
   getLatestPosts,
+  getPostsFromLatestDataset,
   scrapeViaApify,
   scrapeViaDirectWeb,
   normalizePost

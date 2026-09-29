@@ -147,31 +147,35 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Importar 10 publicaciones traducidas
-  // Importar 10 publicaciones traducidas usando la Background Function (límite de 15 min)
+  // Importar 10 publicaciones traducidas
   async function importLast10() {
-    appendLog('Iniciando importación y traducción de las últimas 10 publicaciones en segundo plano...', 'info');
+    appendLog('🚀 Iniciando importación y traducción de las últimas 10 publicaciones...', 'info');
     btnImport10.disabled = true;
     btnSync.disabled = true;
     btnDryRun.disabled = true;
 
     try {
-      const res = await fetch('/api/sync-background?limit=10&force=true', { method: 'POST' });
-      if (res.status === 202 || res.ok) {
-        appendLog('🚀 Proceso iniciado con éxito en segundo plano. Apify está extrayendo los 10 posts de Instagram y se están traduciendo para publicarse en tu canal de Telegram.', 'success');
-        appendLog('📱 ¡Revisa tu canal de Telegram! Los posts irán llegando de forma progresiva.', 'info');
+      const res = await fetch('/api/sync?action=import_10', { method: 'POST' });
+      const data = await res.json();
+
+      if (res.ok && data.status === 'ok') {
+        const count = data.result?.publishedCount || 0;
+        appendLog(`✨ ¡Éxito total! Se publicaron ${count} publicaciones traducidas al español en tu canal.`, 'success');
+        if (data.result?.published) {
+          data.result.published.forEach((p, idx) => {
+            appendLog(`  #${idx + 1} [${p.shortcode}] Traducido: "${(p.translatedCaption || '').substring(0, 70)}..."`, 'info');
+          });
+        }
       } else {
-        const data = await res.json().catch(() => ({}));
-        appendLog(`Error al iniciar importación: ${data.message || 'Código ' + res.status}`, 'error');
+        appendLog(`Error al importar: ${data.message || 'Error desconocido'}`, 'error');
       }
     } catch (err) {
       appendLog(`Error de red: ${err.message}`, 'error');
     } finally {
-      setTimeout(() => {
-        btnImport10.disabled = false;
-        btnSync.disabled = false;
-        btnDryRun.disabled = false;
-        checkStatus();
-      }, 4000);
+      btnImport10.disabled = false;
+      btnSync.disabled = false;
+      btnDryRun.disabled = false;
+      checkStatus();
     }
   }
 
