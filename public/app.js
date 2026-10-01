@@ -3,6 +3,7 @@
  */
 document.addEventListener('DOMContentLoaded', () => {
   const consoleOutput = document.getElementById('console-output');
+  const btnImport1 = document.getElementById('btn-import-1');
   const btnImport10 = document.getElementById('btn-import-10');
   const btnSync = document.getElementById('btn-sync');
   const btnDryRun = document.getElementById('btn-dry-run');
@@ -294,21 +295,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Importar 10 publicaciones traducidas
-  // Importar 10 publicaciones traducidas
-  async function importLast10() {
-    appendLog('🚀 Iniciando importación y traducción de las últimas 10 publicaciones...', 'info');
-    btnImport10.disabled = true;
+  // Importar publicaciones traducidas (1 o N)
+  async function importPosts(limit = 1) {
+    const isSingle = limit === 1;
+    appendLog(`🚀 Iniciando importación y traducción de ${isSingle ? '1 publicación' : `${limit} publicaciones`}...`, 'info');
+    if (btnImport1) btnImport1.disabled = true;
+    if (btnImport10) btnImport10.disabled = true;
     btnSync.disabled = true;
     btnDryRun.disabled = true;
 
     try {
-      const res = await fetch('/api/sync?action=import_10', { method: 'POST' });
+      const res = await fetch(`/api/sync?action=import&limit=${limit}`, { method: 'POST' });
       const data = await res.json();
 
       if (res.ok && data.status === 'ok') {
         const count = data.result?.publishedCount || 0;
-        appendLog(`✨ ¡Éxito total! Se publicaron ${count} publicaciones traducidas al español en tu canal.`, 'success');
+        appendLog(`✨ ¡Éxito total! Se publicaron ${count} publicación(es) traducida(s) al español en tu canal.`, 'success');
         if (data.result?.published) {
           data.result.published.forEach((p, idx) => {
             appendLog(`  #${idx + 1} [${p.shortcode}] Traducido: "${(p.translatedCaption || '').substring(0, 70)}..."`, 'info');
@@ -320,7 +322,8 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (err) {
       appendLog(`Error de red: ${err.message}`, 'error');
     } finally {
-      btnImport10.disabled = false;
+      if (btnImport1) btnImport1.disabled = false;
+      if (btnImport10) btnImport10.disabled = false;
       btnSync.disabled = false;
       btnDryRun.disabled = false;
       checkStatus();
@@ -328,7 +331,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Eventos de botones
-  btnImport10.addEventListener('click', importLast10);
+  if (btnImport1) btnImport1.addEventListener('click', () => importPosts(1));
+  if (btnImport10) btnImport10.addEventListener('click', () => importPosts(10));
   btnSync.addEventListener('click', () => triggerSync(false));
   btnDryRun.addEventListener('click', () => triggerSync(true));
   btnCheckStatus.addEventListener('click', checkStatus);

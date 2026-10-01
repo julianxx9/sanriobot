@@ -8,7 +8,7 @@ const config = {
   instagramUsername: process.env.INSTAGRAM_USERNAME || 'sanrio',
   apifyApiToken: process.env.APIFY_API_TOKEN || '',
   syncSecret: process.env.SYNC_SECRET || '',
-  maxPostsPerRun: parseInt(process.env.MAX_POSTS_PER_RUN, 10) || 10,
+  maxPostsPerRun: parseInt(process.env.MAX_POSTS_PER_RUN, 10) || 1,
   isNetlify: Boolean(process.env.NETLIFY || process.env.AWS_LAMBDA_FUNCTION_NAME),
 
   validate() {

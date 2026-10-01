@@ -248,16 +248,17 @@ exports.handler = async (event, context) => {
       }
     }
 
-    // Importar directamente los últimos 10 posts traducidos
-    if (params.action === 'import_10') {
+    // Importar directamente posts traducidos (admite limit, por defecto 1 o 10)
+    if (params.action === 'import_10' || params.action === 'import_1' || params.action === 'import') {
       try {
-        const result = await runSync({ force: true, limit: 10 });
+        const importLimit = params.limit ? parseInt(params.limit, 10) : (params.action === 'import_10' ? 10 : 1);
+        const result = await runSync({ force: true, limit: importLimit });
         return {
           statusCode: 200,
           headers,
           body: JSON.stringify({
             status: 'ok',
-            message: `Se importaron y publicaron ${result.publishedCount} publicaciones traducidas al español.`,
+            message: `Se importaron y publicaron ${result.publishedCount} publicación(es) traducida(s) al español.`,
             result
           }, null, 2)
         };

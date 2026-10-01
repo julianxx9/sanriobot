@@ -9,14 +9,17 @@ const { runSync } = require('../src/syncService');
 
 async function main() {
   const isDryRun = process.argv.includes('--dry-run');
+  const limitArg = process.argv.find(a => a.startsWith('--limit='));
+  const limit = limitArg ? parseInt(limitArg.split('=')[1], 10) : undefined;
 
   console.log('==================================================');
   console.log('🎀 Sanrio Telegram Bot - Sincronización Local');
   console.log(`Modo: ${isDryRun ? 'SIMULACIÓN (Dry Run)' : 'PUBLICACIÓN REAL'}`);
+  console.log(`Límite: ${limit || '1 (por defecto)'} publicación(es)`);
   console.log('==================================================\n');
 
   try {
-    const result = await runSync({ dryRun: isDryRun });
+    const result = await runSync({ dryRun: isDryRun, limit });
     console.log('\n--------------------------------------------------');
     console.log('Resultado de la ejecución:');
     console.log(`• Total extraídos: ${result.totalScraped}`);

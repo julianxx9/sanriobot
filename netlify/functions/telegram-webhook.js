@@ -31,10 +31,11 @@ exports.handler = async (event, context) => {
     // Manejador del comando /start
     if (text.startsWith('/start')) {
       const welcome = `🎀 <b>¡Hola! Soy el Bot de Sanrio para Telegram</b> 🌸\n\n` +
-        `Monitoreo el perfil oficial de Instagram <b>@${config.instagramUsername}</b> y publico las novedades traducidas al español en tu canal.\n\n` +
+        `Monitoreo el perfil oficial de Instagram <b>@${config.instagramUsername}</b> y publico las novedades traducidas al español en tu canal en modalidad <b>1 publicación al día</b>.\n\n` +
         `📌 <b>Comandos disponibles:</b>\n` +
-        `• <code>/import10</code> - Importa las últimas 10 publicaciones traducidas\n` +
-        `• <code>/sync</code> - Sincroniza publicaciones nuevas pendientes\n` +
+        `• <code>/sync [N]</code> - Sincroniza publicaciones nuevas (por defecto 1)\n` +
+        `• <code>/import [N]</code> - Importa y traduce de inmediato N publicaciones (ej: <code>/import 1</code> o <code>/import 5</code>)\n` +
+        `• <code>/import10</code> - Importa las últimas 10 publicaciones de golpe\n` +
         `• <code>/latest</code> - Ver la última publicación de Sanrio en español\n` +
         `• <code>/status</code> - Ver el estado del bot y configuración\n` +
         `• <code>/help</code> - Ayuda e instrucciones`;
@@ -47,9 +48,10 @@ exports.handler = async (event, context) => {
     if (text.startsWith('/help')) {
       const helpMsg = `ℹ️ <b>Instrucciones de Uso:</b>\n\n` +
         `1. Asegúrate de añadir este bot como <b>Administrador</b> a tu canal: <code>${config.telegramChannelId || '@tu_canal'}</code>.\n` +
-        `2. Las publicaciones nuevas se traducen al español automáticamente.\n` +
-        `3. Usa <code>/import10</code> para enviar las últimas 10 publicaciones de inmediato al canal.\n` +
-        `4. Netlify ejecuta una sincronización automática cada hora.`;
+        `2. Las publicaciones se traducen al español automáticamente.\n` +
+        `3. <b>Modo diario:</b> Netlify ejecuta automáticamente la publicación de <b>1 post al día</b>.\n` +
+        `4. Usa <code>/import 1</code> para publicar la última publicación ahora mismo.\n` +
+        `5. Puedes especificar cualquier cantidad: <code>/import 3</code> o <code>/sync 2</code>.`;
 
       await telegram.sendMessage(chatId, helpMsg);
       return { statusCode: 200, body: 'OK' };
@@ -63,6 +65,7 @@ exports.handler = async (event, context) => {
       const statusMsg = `📊 <b>Estado del Bot de Sanrio:</b>\n\n` +
         `• <b>Perfil de Instagram:</b> @${config.instagramUsername}\n` +
         `• <b>Canal destino:</b> <code>${config.telegramChannelId || 'No configurado'}</code>\n` +
+        `• <b>Modalidad:</b> 1 publicación al día (programada)\n` +
         `• <b>Scraping con Apify:</b> ${config.apifyApiToken ? '✅ Activo' : '⚪ Desactivado (Fallback directo)'}\n` +
         `• <b>Traducción a español:</b> ✅ Activa (Automática)\n` +
         `• <b>Publicaciones registradas:</b> ${postedIds.size}\n` +
@@ -94,12 +97,25 @@ exports.handler = async (event, context) => {
       return { statusCode: 200, body: 'OK' };
     }
 
-    // Manejador del comando /import10
-    if (text.startsWith('/import10')) {
-      await telegram.sendMessage(chatId, `⏳ Importando y traduciendo las últimas 10 publicaciones de @${config.instagramUsername}...`);
+    // Manejador del comando /import, /importar o /import10
+    if (text.startsWith('/import') || text.startsWith('/importar')) {
+      let limit = 1;
+      if (text.startsWith('/import10')) {
+        limit = 10;
+      } else {
+        const parts = text.split(/\s+/);
+        if (parts[1] && !isNaN(parseInt(parts[1], 10))) {
+          limit = Math.min(Math.max(parseInt(parts[1], 10), 1), 20);
+        }
+      }
+
+      await telegram.sendMessage(
+        chatId,
+        `⏳ Importando y traduciendo ${limit === 1 ? '1 publicación' : `las últimas ${limit} publicaciones`} de @${config.instagramUsername}...`
+      );
 
       try {
-        const result = await runSync({ limit: 10, force: true });
+        const result = await runSync({ limit, force: true });
         let report = `✅ <b>Importación completada:</b>\n\n` +
           `• Posts analizados: ${result.totalScraped}\n` +
           `• Posts publicados traducidos al canal: ${result.publishedCount}\n`;
@@ -118,10 +134,19 @@ exports.handler = async (event, context) => {
 
     // Manejador del comando /sync
     if (text.startsWith('/sync')) {
-      await telegram.sendMessage(chatId, `⏳ Iniciando sincronización de @${config.instagramUsername}...`);
+      let limit = config.maxPostsPerRun || 1;
+      const parts = text.split(/\s+/);
+      if (parts[1] && !isNaN(parseInt(parts[1], 10))) {
+        limit = Math.min(Math.max(parseInt(parts[1], 10), 1), 20);
+      }
+
+      await telegram.sendMessage(
+        chatId,
+        `⏳ Iniciando sincronización de @${config.instagramUsername} (límite: ${limit} post${limit > 1 ? 's' : ''})...`
+      );
 
       try {
-        const result = await runSync({ limit: 10 });
+        const result = await runSync({ limit });
         let report = `✅ <b>Sincronización finalizada:</b>\n\n` +
           `• Posts analizados: ${result.totalScraped}\n` +
           `• Posts nuevos detectados: ${result.newFound}\n` +

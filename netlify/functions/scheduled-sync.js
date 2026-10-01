@@ -9,8 +9,8 @@ const handler = async (event) => {
   console.log('[Scheduled Sync] Tarea cron iniciada:', new Date().toISOString());
 
   try {
-    const result = await runSync();
-    console.log('[Scheduled Sync] Tarea finalizada con éxito:', JSON.stringify(result));
+    const result = await runSync({ limit: 1 });
+    console.log('[Scheduled Sync] Tarea finalizada con éxito (1 post al día):', JSON.stringify(result));
     return {
       statusCode: 200
     };
@@ -22,5 +22,6 @@ const handler = async (event) => {
   }
 };
 
-// Se programa para ejecutarse cada hora
-module.exports.handler = schedule('@hourly', handler);
+// Se programa para ejecutarse una vez al día (13:00 UTC / 8:00 AM UTC-5)
+module.exports.handler = schedule('0 13 * * *', handler);
+

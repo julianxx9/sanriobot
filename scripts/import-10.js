@@ -9,16 +9,18 @@ const { runSync } = require('../src/syncService');
 
 async function main() {
   const isDryRun = process.argv.includes('--dry-run');
+  const limitArg = process.argv.find(a => a.startsWith('--limit='));
+  const limit = limitArg ? parseInt(limitArg.split('=')[1], 10) : 10;
 
   console.log('====================================================');
-  console.log('🎀 Sanrio Telegram Bot - Importar 10 Posts Traducidos');
+  console.log(`🎀 Sanrio Telegram Bot - Importar ${limit} Post(s) Traducido(s)`);
   console.log(`Modo: ${isDryRun ? 'SIMULACIÓN (Dry Run)' : 'PUBLICACIÓN REAL'}`);
   console.log('Idioma de destino: Español (es)');
   console.log('====================================================\n');
 
   try {
     const result = await runSync({
-      limit: 10,
+      limit,
       force: true,
       dryRun: isDryRun
     });

@@ -61,11 +61,17 @@ async function runSync(options = {}) {
     };
   }
 
-  // 1. Asegurar tomar las publicaciones más recientes
-  newPosts.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+  // 1. Selección de publicaciones a publicar:
+  if (force) {
+    // Para importaciones explícitas/forzadas, priorizar las más recientes
+    newPosts.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+  } else {
+    // Para sincronización rutinaria/diaria, tomar en orden cronológico (la más antigua pendiente primero)
+    newPosts.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+  }
   const postsToPublish = newPosts.slice(0, limit);
 
-  // 2. Ordenar cronológicamente (más antiguo primero) para que al publicarse aparezcan en orden natural en el canal
+  // 2. Asegurar que se publiquen en orden cronológico natural
   postsToPublish.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
   const published = [];
   const errors = [];

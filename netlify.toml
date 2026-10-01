@@ -8,9 +8,9 @@
 [functions]
   node_bundler = "esbuild"
 
-# Ejecuta la sincronización cada hora automáticamente
+# Ejecuta la sincronización una vez al día (13:00 UTC / 8:00 AM UTC-5)
 [functions."scheduled-sync"]
-  schedule = "@hourly"
+  schedule = "0 13 * * *"
 
 # Redirige llamadas /api/* a las funciones serverless correspondientes
 [[redirects]]
