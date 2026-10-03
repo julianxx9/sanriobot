@@ -252,13 +252,18 @@ exports.handler = async (event, context) => {
     if (params.action === 'import_10' || params.action === 'import_1' || params.action === 'import') {
       try {
         const importLimit = params.limit ? parseInt(params.limit, 10) : (params.action === 'import_10' ? 10 : 1);
-        const result = await runSync({ force: true, limit: importLimit });
+        const force = params.force === 'true' || params.force === '1' || (params.action === 'import_10');
+        const result = await runSync({ force, limit: importLimit });
+        const message = result.publishedCount > 0
+          ? `Se importaron y publicaron ${result.publishedCount} publicación(es) traducida(s) al español.`
+          : 'La publicación más reciente ya está publicada en el canal. No hay posts nuevos pendientes.';
+
         return {
           statusCode: 200,
           headers,
           body: JSON.stringify({
             status: 'ok',
-            message: `Se importaron y publicaron ${result.publishedCount} publicación(es) traducida(s) al español.`,
+            message,
             result
           }, null, 2)
         };

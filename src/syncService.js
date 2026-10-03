@@ -62,7 +62,11 @@ async function runSync(options = {}) {
   }
 
   // Selección de publicaciones: SIEMPRE la más reciente primero (última subida a Instagram)
-  newPosts.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+  newPosts.sort((a, b) => {
+    const timeDiff = (b.timestamp || 0) - (a.timestamp || 0);
+    if (timeDiff !== 0) return timeDiff;
+    return String(b.id || '').localeCompare(String(a.id || ''), undefined, { numeric: true });
+  });
   const postsToPublish = newPosts.slice(0, limit);
   const published = [];
   const errors = [];

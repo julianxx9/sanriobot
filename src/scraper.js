@@ -22,6 +22,17 @@ function normalizePost(raw) {
 
   const id = String(raw.id || shortcode || raw.pk || Date.now());
 
+  let ts = 0;
+  if (raw.timestamp) {
+    ts = typeof raw.timestamp === 'string' ? Math.floor(new Date(raw.timestamp).getTime() / 1000) : Number(raw.timestamp);
+  } else if (raw.taken_at_timestamp) {
+    ts = Number(raw.taken_at_timestamp);
+  } else if (raw.takenAt) {
+    ts = typeof raw.takenAt === 'string' ? Math.floor(new Date(raw.takenAt).getTime() / 1000) : Number(raw.takenAt);
+  } else if (raw.date) {
+    ts = Math.floor(new Date(raw.date).getTime() / 1000);
+  }
+
   return {
     id,
     shortcode: shortcode || id,
@@ -30,7 +41,7 @@ function normalizePost(raw) {
     displayUrl: raw.displayUrl || raw.imageUrl || raw.display_url || (raw.images && raw.images[0]) || '',
     videoUrl: raw.videoUrl || raw.video_url || null,
     isVideo: Boolean(raw.isVideo || raw.is_video || raw.type === 'Video' || raw.videoUrl),
-    timestamp: raw.timestamp ? (typeof raw.timestamp === 'string' ? Math.floor(new Date(raw.timestamp).getTime() / 1000) : raw.timestamp) : (raw.taken_at_timestamp || Math.floor(Date.now() / 1000))
+    timestamp: ts
   };
 }
 
@@ -155,6 +166,14 @@ async function getPostsFromLatestDataset(username, limit = 12) {
     const succeededRun = runs.find(r => r.status === 'SUCCEEDED' && r.defaultDatasetId);
     if (!succeededRun) return null;
 
+    // Si el dataset tiene más de 2 horas de antigüedad, solicitar scrape en vivo a Instagram
+    const MAX_CACHE_AGE_MS = 2 * 60 * 60 * 1000;
+    const finishedAtMs = succeededRun.finishedAt ? new Date(succeededRun.finishedAt).getTime() : 0;
+    if (Date.now() - finishedAtMs > MAX_CACHE_AGE_MS) {
+      console.log(`[Scraper] El dataset en Apify tiene más de 2 horas (${succeededRun.finishedAt}). Se consultará Instagram en vivo.`);
+      return null;
+    }
+
     const datasetId = succeededRun.defaultDatasetId;
     const itemsUrl = `https://api.apify.com/v2/datasets/${datasetId}/items`;
     const itemsRes = await fetch(itemsUrl);
@@ -165,6 +184,13 @@ async function getPostsFromLatestDataset(username, limit = 12) {
       const validPosts = items
         .filter(item => item && (item.shortCode || item.code || (typeof item.url === 'string' && (item.url.includes('/p/') || item.url.includes('/reel/') || item.url.includes('/tv/'))) || item.displayUrl || item.type === 'Image' || item.type === 'Video' || item.type === 'Sidecar'))
         .map(normalizePost);
+
+      // Ordenar determinísticamente de más reciente a más antiguo
+      validPosts.sort((a, b) => {
+        const timeDiff = (b.timestamp || 0) - (a.timestamp || 0);
+        if (timeDiff !== 0) return timeDiff;
+        return String(b.id || '').localeCompare(String(a.id || ''), undefined, { numeric: true });
+      });
 
       if (validPosts.length >= Math.min(limit, 10)) {
         console.log(`[Scraper] Se recuperaron ${validPosts.length} publicaciones del dataset previo en Apify.`);
